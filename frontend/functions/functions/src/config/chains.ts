@@ -21,7 +21,7 @@ export const CHAINS: { [chainId: string]: ChainConfig } = {
   "8453": {
     name: "Base",
     scanApiUrl: "https://api.etherscan.io/v2/api",
-    scanApiKey: process.env.ETHERSCAN_API_KEY || "E9ESCUBHFFTCVEV3XNWGYDUWUSG1EM285D", // Replace with your BaseScan API key from environment variables
+    scanApiKey: process.env.ETHERSCAN_API_KEY || "", // Replace with your BaseScan API key from environment variables
     valutContractAddress: "0xcdC71521aB58A3F67A9894d7083Cd3AA523c5072", // Replace with actual Valut contract address on Base
     erc20Tokens: {
       // Example tokens on Base - replace with actual tokens you want to track
