@@ -8,21 +8,21 @@ import { TokenTransactionApiResponse, TokenTransaction, DepositTransaction } fro
 import * as admin from 'firebase-admin';
 
 /**
- * Fetches ERC20 token transfer events from blockchain explorer API
+ * Fetches ERC20 token transfer events from blockchain explorer API for a single token contract
  * 
  * @param chainId Chain ID to query
- * @param contractAddress ERC20 token contract address (optional)
  * @param walletAddress Valut contract address to filter transactions
  * @param startBlock Starting block number for the query
  * @param endBlock Ending block number for the query
+ * @param contractAddress ERC20 token contract address
  * @returns API response with token transactions
  */
-export async function fetchTokenTransactions(
+export async function fetchTokenTransactionsForContract(
   chainId: string,
   walletAddress: string,
   startBlock: number,
   endBlock: number,
-  contractAddress?: string
+  contractAddress: string
 ): Promise<TokenTransactionApiResponse> {
   const chainConfig = CHAINS[chainId];
   
@@ -37,8 +37,8 @@ export async function fetchTokenTransactions(
       params: {
         module: 'account',
         action: 'tokentx',
-        address: walletAddress,
-        contractaddress: contractAddress,
+        address: walletAddress, // This should be the Valut contract address
+        contractaddress: contractAddress, // This is the token asset address
         startblock: startBlock,
         endblock: endBlock,
         page: 1,
@@ -51,9 +51,63 @@ export async function fetchTokenTransactions(
 
     return response.data;
   } catch (error) {
-    console.error(`Error fetching token transactions for chain ${chainId}:`, error);
+    console.error(`Error fetching token transactions for chain ${chainId} and contract ${contractAddress}:`, error);
     throw error;
   }
+}
+
+/**
+ * Fetches ERC20 token transfer events from blockchain explorer API for all supported tokens
+ * 
+ * @param chainId Chain ID to query
+ * @param startBlock Starting block number for the query
+ * @param endBlock Ending block number for the query
+ * @returns Object containing token transactions for each token contract
+ */
+export async function fetchTokenTransactions(
+  chainId: string,
+  startBlock: number,
+  endBlock: number
+): Promise<{ [contractAddress: string]: TokenTransactionApiResponse }> {
+  const chainConfig = CHAINS[chainId];
+  
+  if (!chainConfig) {
+    throw new Error(`Chain ID ${chainId} is not supported`);
+  }
+
+  // Use the Valut contract address from the chain configuration
+  const valutAddress = chainConfig.valutContractAddress;
+  
+  // Get all ERC20 token addresses for this chain
+  const tokenAddresses = Object.keys(chainConfig.erc20Tokens);
+  
+  if (tokenAddresses.length === 0) {
+    console.log(`No ERC20 tokens configured for chain ${chainId}`);
+    return {};
+  }
+  
+  // Create a map to store the results for each token
+  const results: { [contractAddress: string]: TokenTransactionApiResponse } = {};
+  
+  // Fetch transactions for each token
+  for (const tokenAddress of tokenAddresses) {
+    try {
+      const tokenResponse = await fetchTokenTransactionsForContract(
+        chainId,
+        valutAddress,
+        startBlock,
+        endBlock,
+        tokenAddress
+      );
+      
+      results[tokenAddress] = tokenResponse;
+    } catch (error) {
+      console.error(`Error fetching transactions for token ${tokenAddress} on chain ${chainId}:`, error);
+      // Continue with other tokens even if one fails
+    }
+  }
+  
+  return results;
 }
 
 /**

@@ -12,9 +12,15 @@ import * as logger from 'firebase-functions/logger';
 import { processAllDeposits, processChainDeposits } from './services/depositService';
 import { CHAINS } from './config/chains';
 import { ScheduledEvent } from 'firebase-functions/v2/scheduler';
+import { setGlobalOptions } from 'firebase-functions';
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
+
+// Set global region asia-south1
+setGlobalOptions({
+  region: 'asia-south1'
+});
 
 /**
  * Scheduled function that runs every 15 minutes to check for new ERC20 deposits 
@@ -22,7 +28,7 @@ admin.initializeApp();
  */
 export const checkERC20Deposits = onSchedule({
   schedule: 'every 15 minutes',
-  timeZone: 'UTC',
+  timeZone: 'Asia/Kolkata',
   retryCount: 3,
 }, async (event: ScheduledEvent) => {
   try {

@@ -40,28 +40,12 @@ export async function processChainDeposits(
     
     logger.info(`Processing deposits for chain ${chainId} from block ${startBlock} to ${endBlock}`);
     
-    // Fetch token transfer events
-    const response = await fetchTokenTransactions(
+    // Fetch token transfer events for all configured tokens
+    const tokenResponses = await fetchTokenTransactions(
       chainId,
-      chainConfig.valutContractAddress,
       startBlock,
       endBlock
     );
-    
-    if (response.status !== '1') {
-      logger.error(`API Error: ${response.message}`, { chainId });
-      return 0;
-    }
-    
-    // No transactions found
-    if (!response.result || response.result.length === 0) {
-      logger.info(`No new deposits found for chain ${chainId}`);
-      // Still update the last processed block to avoid querying the same range again
-      if (endBlock > startBlock) {
-        await updateLastProcessedBlock(chainId, endBlock);
-      }
-      return 0;
-    }
     
     const db = admin.firestore();
     const batch = db.batch();
@@ -70,34 +54,49 @@ export async function processChainDeposits(
     let maxBlockNumber = startBlock;
     let newDepositsCount = 0;
     
-    // Filter transactions that are receiving tokens at our contract address
-    const deposits = response.result.filter(tx => 
-      tx.to.toLowerCase() === chainConfig.valutContractAddress.toLowerCase()
-    );
-    
-    // Process each deposit transaction
-    for (const tx of deposits) {
-      const blockNumber = parseInt(tx.blockNumber);
-      
-      // Track the highest block number to update our last processed block
-      if (blockNumber > maxBlockNumber) {
-        maxBlockNumber = blockNumber;
+    // Process each token's transactions
+    for (const [contractAddress, response] of Object.entries(tokenResponses)) {
+      // Check API response status
+      if (response.status !== '1') {
+        logger.error(`API Error for token ${contractAddress}: ${response.message}`, { chainId });
+        continue; // Skip this token but continue with others
       }
       
-      // Format transaction for storage
-      const deposit: DepositTransaction = formatDepositTransaction(tx, chainId);
+      // Skip if no transactions found for this token
+      if (!response.result || response.result.length === 0) {
+        logger.info(`No new deposits found for token ${contractAddress} on chain ${chainId}`);
+        continue;
+      }
       
-      // Check if this transaction already exists
-      const existingDoc = await depositCollection
-        .where('chainId', '==', chainId)
-        .where('hash', '==', deposit.hash)
-        .limit(1)
-        .get();
+      // Filter transactions that are receiving tokens at our Valut contract address
+      const deposits = response.result.filter(tx => 
+        tx.to.toLowerCase() === chainConfig.valutContractAddress.toLowerCase()
+      );
       
-      // Only add new transactions
-      if (existingDoc.empty) {
-        batch.set(depositCollection.doc(), deposit);
-        newDepositsCount++;
+      // Process each deposit transaction
+      for (const tx of deposits) {
+        const blockNumber = parseInt(tx.blockNumber);
+        
+        // Track the highest block number to update our last processed block
+        if (blockNumber > maxBlockNumber) {
+          maxBlockNumber = blockNumber;
+        }
+        
+        // Format transaction for storage
+        const deposit: DepositTransaction = formatDepositTransaction(tx, chainId);
+        
+        // Check if this transaction already exists
+        const existingDoc = await depositCollection
+          .where('chainId', '==', chainId)
+          .where('hash', '==', deposit.hash)
+          .limit(1)
+          .get();
+        
+        // Only add new transactions
+        if (existingDoc.empty) {
+          batch.set(depositCollection.doc(), deposit);
+          newDepositsCount++;
+        }
       }
     }
     
