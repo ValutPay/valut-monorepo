@@ -13,7 +13,12 @@ import { useAccount, useConnect, useDisconnect } from "wagmi"
 import { CHAINS } from "@/lib/chains"
 import { useAuth } from "@/contexts/auth-context"
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { ConnectWallet } from '@coinbase/onchainkit/wallet'
+import { 
+  ConnectWallet,
+  Wallet,
+  WalletDropdown,
+  WalletDropdownDisconnect
+} from '@coinbase/onchainkit/wallet'
 import { OnchainProviders } from "@/components/onchain-providers"
 
 // Import custom hooks
@@ -275,7 +280,7 @@ export function AddFundsContent() {
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="rainbow" className="flex items-center gap-2">
                       <WalletIcon className="h-4 w-4" />
-                      Onchain Wallet
+                      EOA Wallet
                     </TabsTrigger>
                     <TabsTrigger value="onchain" className="flex items-center gap-2">
                       <User className="h-4 w-4" />
@@ -292,30 +297,42 @@ export function AddFundsContent() {
                   </TabsContent>
                   
                   <TabsContent value="onchain" className="space-y-4 pt-4">
-                    {/* OnchainKit Wallet Connect Button */}
+                    {/* OnchainKit Wallet Modal */}
                     <div className="flex justify-center">
                       <OnchainProviders>
-                        {/* OnchainKit wallet with proper modal for wallet selection */}
-                        <ConnectWallet
-                          onConnect={() => {
-                            toast({
-                              title: "Smart Wallet Connected",
-                              description: "Your smart wallet is connected successfully."
-                            });
-                            
-                            // Auto-continue to next step when connected
-                            setTimeout(() => {
-                              handleContinue();
-                            }, 500);
-                          }}
-                          text="Connect Smart Wallet"
-                          className="w-full py-2 px-4 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
-                        >
-                          <div className="flex items-center justify-center gap-2">
-                            <User className="h-4 w-4" />
-                            <span>Smart Wallet Connected</span>
-                          </div>
-                        </ConnectWallet>
+                        <Wallet>
+                          <ConnectWallet
+                            onConnect={() => {
+                              toast({
+                                title: "Smart Wallet Connected",
+                                description: "Your smart wallet is connected successfully."
+                              });
+                              
+                              // Auto-continue to next step when connected
+                              setTimeout(() => {
+                                handleContinue();
+                              }, 500);
+                            }}
+                          >
+                            <Button className="w-full py-2 px-4 flex items-center justify-center gap-2">
+                              <User className="h-4 w-4" />
+                              <span>Connect Smart Wallet</span>
+                            </Button>
+                          </ConnectWallet>
+                          <WalletDropdown>
+                            <div className="px-4 pt-3 pb-2">
+                              <div className="flex flex-col items-start gap-1 mb-2">
+                                <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                  <User className="h-4 w-4 text-primary" />
+                                </div>
+                                <div className="text-sm font-medium">
+                                  {onchainAddress?.substring(0, 6)}...{onchainAddress?.substring(onchainAddress?.length - 4)}
+                                </div>
+                              </div>
+                            </div>
+                            <WalletDropdownDisconnect />
+                          </WalletDropdown>
+                        </Wallet>
                       </OnchainProviders>
                     </div>
                   </TabsContent>
