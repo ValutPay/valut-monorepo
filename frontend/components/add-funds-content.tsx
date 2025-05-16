@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/use-toast"
 import { useAccount, useConnect, useDisconnect } from "wagmi"
-import { CHAINS } from "@/functions/functions/src/config/chains"
+import { CHAINS } from "@/lib/chains"
 import { useAuth } from "@/contexts/auth-context"
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { ConnectWallet } from '@coinbase/onchainkit/wallet'
