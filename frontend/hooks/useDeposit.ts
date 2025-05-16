@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useWriteContract } from 'wagmi';
 import { parseUnits } from 'viem';
-import { CHAINS } from '@/functions/functions/src/config/chains';
+import { CHAINS } from '@/lib/chains';
 
 export interface TokenInfo {
   address: string;
