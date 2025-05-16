@@ -63,7 +63,7 @@ function SendMoneyContent() {
               // For now, we'll just simulate a QR code detection after 3 seconds
               setTimeout(() => {
                 stopScanner();
-                handleQrCodeScan("upi://pay?pa=example@okaxis&pn=Example%20Merchant&am=499.00");
+                handleQrCodeScan("upi://pay?pa=spapinwar@okhdfcbank&pn=Example%20Merchant&am=30.00");
               }, 3000);
             }
           }

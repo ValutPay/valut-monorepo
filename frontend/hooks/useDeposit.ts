@@ -11,13 +11,24 @@ export interface TokenInfo {
   decimals: number;
 }
 
+export interface TransactionResponse {
+  transactionId: string;
+  amount: string;
+  chainId: string;
+  address: string;
+  timestamp: string;
+  status: 'completed' | 'pending' | 'failed';
+}
+
 /**
  * Custom hook for handling deposit and transfer functionality
  */
 export function useDeposit(chainId: string) {
   const [amount, setAmount] = useState('');
   const [isTransferring, setIsTransferring] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [transaction, setTransaction] = useState<TransactionResponse | null>(null);
   const { toast } = useToast();
 
   // Get contract address based on selected chain
@@ -39,14 +50,50 @@ export function useDeposit(chainId: string) {
   // Handle success and error with useEffect
   useEffect(() => {
     if (isSuccess) {
+      // Simulate API call to process transaction after blockchain transfer
+      simulateTransactionProcessing();
+    }
+  }, [isSuccess, toast]);
+  
+  /**
+   * Simulate transaction processing with the server
+   */
+  const simulateTransactionProcessing = async () => {
+    setLoading(true);
+    
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 2000) + 3000));
+      
+      // Create transaction response with fixed ID
+      const txnResponse: TransactionResponse = {
+        transactionId: 'LYPDL5M7K4V3GP1',
+        amount,
+        chainId,
+        address: contractAddress,
+        timestamp: new Date().toISOString(),
+        status: 'completed'
+      };
+      
+      setTransaction(txnResponse);
+      setSuccess(true);
+      
       toast({
         title: 'Transfer Successful',
         description: 'Your funds have been transferred to the Valut contract.'
       });
-      setSuccess(true);
+    } catch (error) {
+      console.error('Transaction processing error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Processing Error',
+        description: 'There was an error processing your transaction.'
+      });
+    } finally {
+      setLoading(false);
       setIsTransferring(false);
     }
-  }, [isSuccess, toast]);
+  };
 
   /**
    * Transfer tokens to the contract
@@ -114,7 +161,9 @@ export function useDeposit(chainId: string) {
     setAmount,
     isTransferring,
     isPending,
+    loading,
     success,
+    transaction,
     contractAddress,
     usdcTokenAddress,
     tokenInfo,
